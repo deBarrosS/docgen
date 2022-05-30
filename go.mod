@@ -1,4 +1,4 @@
-module github.com/deBarosS/docgen
+module github.com/deBarrosS/docgen
 
 go 1.18
 
