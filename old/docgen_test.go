@@ -1,4 +1,4 @@
-package docgen
+package old
 
 import (
 	"encoding/json"
@@ -16,9 +16,21 @@ type OrderItemFilter struct {
 	OrderID          string
 }
 
+func (OrderItemFilter) ForceRequestBody() {}
+
 type OrderItemIn struct {
+	Id          string                 `path:"in_path"`
 	Information map[string]interface{} `json:"information"`
 }
+
+func (OrderItemIn) ForceRequestBody() {}
+
+type OrderItemRequestParamsPath struct {
+	Id string `path:"id" json:"id"` // IF WE USE THE SAME STRUCT IN DIFFERENT ROUTES PATH IS CONSIDERED OBLIGATORY THEREFORE IT SUCKS :/
+	OrderItemRequestParams
+}
+
+func (OrderItemRequestParamsPath) ForceRequestBody() {}
 
 type OrderItemRequestParams struct {
 	SiteID           string          `json:"site_id" validate:"required,alphanum" create:"required,alphanum"  edit:"required,alphanum"  get:"required,alphanum" addli:"required,alphanum"`
@@ -28,13 +40,15 @@ type OrderItemRequestParams struct {
 	OrderItem        *OrderItemIn    `json:"order_item" edit:"required"`
 }
 
+func (OrderItemRequestParams) ForceRequestBody() {}
+
 func TestCreationApi(t *testing.T) {
 	api := new(Api)
 	api.InitApi("OMS", "V0", 22)
 
 	r := new(mux.Router)
 
-	api.Add(r.NewRoute().Path("/orders/{id}").Methods("GET")).BodyInput("GET", new(OrderItemRequestParams))
+	api.Add(r.NewRoute().Path("/orders/{id}").Methods("GET")).BodyInput("GET", new(OrderItemRequestParamsPath))
 	// api.Add(r.NewRoute().Path("/orders/{id}")).BodyInput("POST", new(OrderItemIn))
 	// api.Add(r.NewRoute().Path("/orders/{id2}")).BodyInput("POST", new(OrderItemIn))
 	// api.Add(r.NewRoute().Path("/orders/{id3}")).BodyInput("POST", new(OrderItemIn))
@@ -56,6 +70,11 @@ func TestCreationApi(t *testing.T) {
 	}
 }
 
+func handler(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Printf("paramHandler")
+}
+
 func TestDocGen(t *testing.T) {
 	// ----------------- API INITIALIZATION ----- Once per service
 	api := new(Api)
@@ -67,18 +86,25 @@ func TestDocGen(t *testing.T) {
 	// ROUTES DECLARATION
 	orderPath := "/orders"
 
+	// BEFORE
+	r.NewRoute().Path(orderPath).Methods("GET")
+
+	// AFTER
 	api.Add(
-		r.NewRoute().Path(orderPath).Methods("GET")).
-		BodyInput("GET", new(OrderItemRequestParams)).
+		r.NewRoute().Path(orderPath).Methods("GET").Handler()).
+		BodyInput("GET", new(OrderItemRequestParamsPath)).
 		BodyOutput("200", new(OrderItemFilter))
 
-	api.Add(r.NewRoute().Path(orderPath+"/{id}").Methods("GET")).BodyInput("GET", new(OrderItemIn))
+		// TODO :
+	// NOTE : Les structs dans les inputs doivent implémenter l'interface RequestBodyEnforcer de openapi-go (si out of the box)
 
-	api.Add(r.NewRoute().Path(orderPath).Methods("POST")).BodyInput("POST", new(OrderItemIn))
+	api.Add(r.NewRoute().Path(orderPath+"/{id}").Methods("GET")).BodyInput("GET", new(OrderItemRequestParamsPath)) // FINALEMENT PAS BESOIN DE LA METHODE (1 Route par {path+methode})
 
-	api.Add(r.NewRoute().Path(orderPath+"/{id}").Methods("PATCH")).BodyInput("PATCH", new(OrderItemRequestParams))
+	api.Add(r.NewRoute().Path(orderPath).Methods("POST")).BodyInput("POST", new(OrderItemRequestParams))
 
-	api.Add(r.NewRoute().Path(orderPath+"/{id}/comments").Methods("POST")).BodyInput("POST", new(OrderItemRequestParams))
+	api.Add(r.NewRoute().Path(orderPath+"/{id}").Methods("PATCH")).BodyInput("PATCH", new(OrderItemRequestParamsPath))
+
+	api.Add(r.NewRoute().Path(orderPath+"/{id}/comments").Methods("POST")).BodyInput("POST", new(OrderItemRequestParamsPath))
 
 	api.Add(r.NewRoute().Path(orderPath + "/{id}/comments").Methods("GET"))
 
@@ -150,5 +176,19 @@ func TestDocGen(t *testing.T) {
 
 	api.Add(r.NewRoute().Path("/").Methods("GET"))
 
+	// ------- API DOCUMENTATION GENERATION ---- Once per service
 	api.GenerateDoc()
+
+}
+
+func TestDocGenHttp(t *testing.T) {
+
+	r := new(mux.Router)
+
+	// ROUTES DECLARATION
+	orderPath := "/orders"
+
+	// BEFORE
+	r.NewRoute().Path(orderPath).Methods("GET").Handler(http.HandlerFunc(handler))
+	orderPath = "only to add breakpoint"
 }

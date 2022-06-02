@@ -1,4 +1,4 @@
-package docgen
+package old
 
 import (
 	"errors"
@@ -24,7 +24,7 @@ type Operation struct {
 	Output map[string]interface{}
 }
 
-// Initialize the specification of the API. The number of routes is default to 10.
+// Initialize the specification of the API. The number of routes is default to 30.
 func (api *Api) InitApi(name, version string, nbRoutes int) *Api {
 	api.Name = name
 	api.Version = version
@@ -38,7 +38,7 @@ func (api *Api) InitApi(name, version string, nbRoutes int) *Api {
 	}
 
 	if nbRoutes <= 0 {
-		api.AllRoutes = make([]*Operation, 10)
+		api.AllRoutes = make([]*Operation, 30)
 	} else {
 		api.AllRoutes = make([]*Operation, nbRoutes)
 	}
@@ -112,11 +112,34 @@ func (api *Api) GenerateDoc() ([]byte, error) {
 		methods, err := op.Route.GetMethods()
 		if err == nil {
 			for _, meth := range methods {
-				oasOp := openapi3.Operation{}                                             // Création d'une Opération (Une méthode sur une route )
-				reflector.SetRequest(&oasOp, op.Input[string(meth)], http.MethodGet)      // op = GET avec OrderItemRequestParams tant qu'input
+				oasOp := openapi3.Operation{}
+
+				input := op.Input[string(meth)]
+
+				path, err := op.Route.GetPathTemplate()
+				method := http.MethodGet
+				if err != nil {
+					continue
+				}
+				switch meth {
+				case "PATCH":
+					method = http.MethodPatch
+					break
+				case "POST":
+					method = http.MethodPost
+					break
+				case "DELETE":
+					method = http.MethodDelete
+					break
+				case "PUT":
+					method = http.MethodPut
+					break
+				}
+				reflector.SetRequest(&oasOp, input, method) // op = GET avec OrderItemRequestParams tant qu'input
+				//reflector.SetRequest(&oasOp, op.Input[string(meth)], http.MethodGet)      // op = GET avec OrderItemRequestParams tant qu'input
 				reflector.SetJSONResponse(&oasOp, op.Output[string(meth)], http.StatusOK) // Si OK (200), l'objet retour est du type OrderItemFilter
 				// reflector.SetJSONResponse(&op, new([]OrderItemFilter), http.StatusConflict) // Si OK (409), l'objet retour est du type []OrderItemFilter
-				s.AddOperation(http.MethodGet, "/orders", oasOp)
+				s.AddOperation(method, path, oasOp)
 			}
 		}
 	}
