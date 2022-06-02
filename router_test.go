@@ -1,43 +1,53 @@
 package docgen
 
 import (
+	"fmt"
 	"testing"
 )
 
-func TestCreationRouter(t *testing.T) {
-	//------------ Initialization of the router variable
+func TestNewRouter(t *testing.T) {
+	r := NewRouter()
+	r.routes = []Route{
+		{
+			path:   "/",
+			method: "get",
+		},
+	}
 
-	// BEFORE
-	// r := app.Get("router").(*mux.Router)
-
-	// AFTER
-	// router := app.Get("router").(*mux.Router) // CHANGE BECAUSE OF env variables
-	// router := new(mux.Router)
-	// r := new(Router)
-	// r.router = router
-
-	// ------------ END OF INITIALIZATION
-
-	// Nothing to change afterwards
+	fmt.Println("r.routes[0].path")
+	fmt.Println(r.routes[0].path)
+	fmt.Println(r.routes[0].method)
+}
+func TestRegisterRoutes(t *testing.T) {
 
 }
 
-func TestDocGenRouter(t *testing.T) {
+func TestDocgenRouter(t *testing.T) {
+	r := NewRouter() // TODO: add the di.Container as parameter
+	r.routes = []Route{
+		{
+			path:   "/",
+			method: "get",
+		},
+		{
+			path:   "/",
+			method: "post",
+		},
+		{
+			path:   "/",
+			method: "patch",
+		},
+		{
+			path:   "/withbody",
+			method: "post",
+		},
+		{
+			path:   "/withbody",
+			method: "patch",
+		},
+	}
 
-	// ----- INITIALIZATION
-
-	// r	 := InitApi("OMS", "V0")
-	// router := new(mux.Router)
-	// r.router = router
-
-	// // ----- END OF INITIALIZATION
-
-	// // ----- ROUTES DECLARATION (as normal (or almost))
-	// orderPath := "/orders"
-
-	// r.NewRoute().Path(orderPath).Methods("GET")//.Handler(func inputn output)
-
-	// // ------- API DOCUMENTATION GENERATION
-	// r.GenerateDoc()
-
+	// Server and Documentation use the same structure but are not mutually dependent
+	RegisterRoutes(r)
+	GenerateDoc(r)
 }

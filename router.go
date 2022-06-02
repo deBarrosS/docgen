@@ -7,8 +7,7 @@ import (
 )
 
 type Router struct {
-	//1router     *mux.Router
-	routes     []*Route
+	routes     []Route
 	nbRoutes   int
 	default400 interface{}
 	default500 interface{} // etc...
@@ -26,7 +25,7 @@ type Route struct {
 
 func InitApi(name, version string) *Router {
 	r := new(Router)
-	r.routes = make([]*Route, 30)
+	r.routes = make([]Route, 30)
 	r.nbRoutes = 0
 	// r.doc = new(Api)
 	// r.doc.InitApi(name, version, 30)
@@ -34,6 +33,12 @@ func InitApi(name, version string) *Router {
 	return r
 }
 
+func NewRouter() *Router {
+	r := new(Router)
+	//r.routes = make([]Route, 30)
+	r.nbRoutes = 0
+	return r
+}
 func (r *Router) NewRoute() *Route {
 
 	nR := new(Route)
@@ -42,7 +47,7 @@ func (r *Router) NewRoute() *Route {
 	//1nR.route = r.router.NewRoute()
 
 	if r.nbRoutes < len(r.routes) {
-		r.routes[r.nbRoutes] = nR
+		//r.routes[r.nbRoutes] = nR
 		r.nbRoutes++
 	}
 	// else grow slice
@@ -102,7 +107,7 @@ func (r *Route) ExpectedResponses(code string, body interface{}) *Route {
 
 // Router as param or as caller ?
 // Pass "app" as parameter ?
-func (r *Router) RegisterRoutes() (*mux.Router, error) {
+func RegisterRoutes(r *Router) (*mux.Router, error) {
 	router := new(mux.Router)
 
 	for _, route := range r.routes {
