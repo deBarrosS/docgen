@@ -32,14 +32,37 @@ func GenerateDoc(r *Router) error {
 		if &op != nil {
 
 			oasOp := openapi3.Operation{}
+
+			if strings.Contains(op.path, "{") {
+				_path := op.path
+				//var params []*openapi3.Parameter
+
+				for strings.Contains(_path, "{") {
+					_, aft, _ := strings.Cut(_path, "{")
+					_path = aft
+					pName, _, _ := strings.Cut(aft, "}")
+
+					oasOp.Parameters = append(oasOp.Parameters,
+
+						openapi3.ParameterOrRef{
+							Parameter: &openapi3.Parameter{
+								Name: pName,
+								In:   openapi3.ParameterInPath,
+							},
+						},
+					)
+				}
+
+			}
 			// No need to "convert" the op.method on http.Method<type> as http.Method is nothing more than a string like "PATH", "GET", etc
 			// BUT probably need to be uppercase
-
 			reflector.SetRequest(&oasOp, op.input, strings.ToUpper(op.method)) // op = GET avec OrderItemRequestParams tant qu'input
 
-			//reflector.SetRequest(&oasOp, op.Input[string(meth)], http.MethodGet)      // op = GET avec OrderItemRequestParams tant qu'input
-			//reflector.SetJSONResponse(&oasOp, op.Output[string(meth)], http.StatusOK) // Si OK (200), l'objet retour est du type OrderItemFilter
-			// reflector.SetJSONResponse(&op, new([]OrderItemFilter), http.StatusConflict) // Si OK (409), l'objet retour est du type []OrderItemFilter
+			if op.resps != nil {
+				for code, body := range op.resps {
+					reflector.SetJSONResponse(&oasOp, body, code)
+				}
+			}
 
 			s.AddOperation(op.method, op.path, oasOp)
 
