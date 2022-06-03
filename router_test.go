@@ -70,7 +70,48 @@ func TestDocgenResponses(t *testing.T) {
 		{
 			path:   "/{name}/{id}",
 			method: "post",
-			input:  new(old.OrderItemFilter),
+			resps: map[int]interface{}{
+				200:                   new(old.OrderItemFilter),
+				201:                   new(old.OrderItemFilter),
+				http.StatusBadRequest: new(old.OtherJson),
+			},
+		},
+		{
+			path:   "/{id}",
+			method: http.MethodDelete,
+		},
+		{
+			path:   "/{new}",
+			method: "patch",
+		},
+		{
+			path:   "/withbody",
+			method: "POST",
+		},
+		{
+			path:   "/withbody",
+			method: "gEt",
+		},
+	}
+
+	// Server and Documentation use the same structure but are not mutually dependent
+	muxrouter, err := RegisterRoutes(r)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(muxrouter) // no errors linting
+
+	GenerateDoc(r)
+}
+
+func TestDocgenHandler(t *testing.T) {
+	r := NewRouter() // TODO: add the di.Container as parameter
+	r.routes = []Route{
+		{
+			path:    "/{name}/{id}",
+			method:  "post",
+			handler: handler,
+			//input:   new(old.OrderItemFilter),
 			resps: map[int]interface{}{
 				200:                   new(old.OrderItemFilter),
 				201:                   new(old.OrderItemFilter),
@@ -105,7 +146,7 @@ func TestDocgenResponses(t *testing.T) {
 	GenerateDoc(r)
 }
 
-func TestDocgenHandler(t *testing.T) {
+func TestDocgenInternalDeprecated(t *testing.T) {
 	r := NewRouter() // TODO: add the di.Container as parameter
 	r.routes = []Route{
 		{
@@ -118,10 +159,12 @@ func TestDocgenHandler(t *testing.T) {
 				201:                   new(old.OrderItemFilter),
 				http.StatusBadRequest: new(old.OtherJson),
 			},
+			internal: true,
 		},
 		{
-			path:   "/{id}",
-			method: http.MethodDelete,
+			path:       "/{id}",
+			method:     http.MethodDelete,
+			deprecated: true,
 		},
 		{
 			path:   "/{names}",
@@ -134,6 +177,51 @@ func TestDocgenHandler(t *testing.T) {
 		{
 			path:   "/withbody",
 			method: "gEt",
+		},
+	}
+
+	// Server and Documentation use the same structure but are not mutually dependent
+	muxrouter, err := RegisterRoutes(r)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(muxrouter) // no errors linting
+
+	GenerateDoc(r)
+}
+
+func TestDocGenGetBody(t *testing.T) {
+	r := NewRouter() // TODO: add the di.Container as parameter
+	r.routes = []Route{
+		{
+			path:    "/{name}/{id}",
+			method:  "post",
+			handler: handler,
+			input:   new(old.OrderItemFilter),
+			resps: map[int]interface{}{
+				200:                   new(old.OrderItemFilter),
+				201:                   new(old.OrderItemFilter),
+				http.StatusBadRequest: new(old.OtherJson),
+			},
+			internal: true,
+		},
+		{
+			path:       "/{id}",
+			method:     http.MethodDelete,
+			deprecated: true,
+		},
+		{
+			path:   "/{names}",
+			method: "patch",
+		},
+		{
+			path:   "/withbody",
+			method: "POST",
+		},
+		{
+			path:   "/withbody",
+			method: "gEt",
+			input:  new(old.OtherJson),
 		},
 	}
 

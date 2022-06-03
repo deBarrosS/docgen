@@ -46,6 +46,28 @@ func (api *Api) InitApi(name, version string, nbRoutes int) *Api {
 	return api
 }
 
+type Input struct {
+	body interface{}
+}
+
+func (*Input) ForceRequestBody() {}
+
+type OrderItemFilter struct {
+	Input
+	IDs              []string `json:"ids"`
+	ItemIDs          []string `json:"item_ids" getorders:"isdefault"`
+	LineItemGroupIDs []string `json:"line_item_group_ids" getorders:"isdefault"`
+	OrderID          string
+}
+
+type OtherJson struct {
+	Input
+	Name    string   `json:"ids" required:"true" pattern:"^[a-z]{2}-[A-Z]{2}$"`
+	Orders  []string `json:"item_ids" getorders:"isdefault"`
+	Array   []string `json:"line_item_group_ids" getorders:"isdefault"`
+	OrderID string
+}
+
 // As we are returning pointers, no problem regarding the changes to the struct
 func (api *Api) Add(newRoute *mux.Route) *Operation {
 	if api == nil {
