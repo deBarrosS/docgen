@@ -13,29 +13,29 @@ func (HTTPHandler) ServeHTTP(http.ResponseWriter, *http.Request) {
 }
 
 type Info struct {
-	name    string
-	version string //...
+	Name    string
+	Version string //...
 }
 
 type Router struct {
-	routes       []Route
-	baseUrl      string
-	defaultResps map[int]interface{}
+	Routes       []Route
+	BaseUrl      string
+	DefaultResps map[int]interface{}
 }
 
 type Route struct {
-	path       string
-	method     string
-	input      interface{}         // No need to map by method because of the line above ^^
-	resps      map[int]interface{} // outputs per return code
-	handler    HTTPHandler
-	internal   bool
-	deprecated bool
+	Path       string
+	Method     string
+	Input      interface{}         // No need to map by method because of the line above ^^
+	Resps      map[int]interface{} // outputs per return code
+	Handler    HTTPHandler
+	Internal   bool
+	Deprecated bool
 }
 
 func InitApi(name, version string) *Router {
 	r := new(Router)
-	r.routes = make([]Route, 30)
+	r.Routes = make([]Route, 30)
 
 	return r
 }
@@ -47,9 +47,9 @@ func NewRouter() *Router {
 
 func (r *Router) NewRoute(path, meth string) *Router {
 
-	r.routes = append(r.routes, Route{
-		path:   path,
-		method: meth,
+	r.Routes = append(r.Routes, Route{
+		Path:   path,
+		Method: meth,
 	})
 
 	return r
@@ -64,9 +64,9 @@ func CreateHTTPHandler(h HTTPHandler, input interface{}, out200 interface{}) {
 func RegisterRoutes(r *Router) (*mux.Router, error) {
 	router := new(mux.Router)
 
-	for _, route := range r.routes {
-		if &route != nil && &route.path != nil && &route.method != nil {
-			router.NewRoute().Path(route.path).Methods(route.method).Handler(route.handler) //Add handler
+	for _, route := range r.Routes {
+		if &route != nil && &route.Path != nil && &route.Method != nil {
+			router.NewRoute().Path(route.Path).Methods(route.Method).Handler(route.Handler) //Add handler
 		}
 		// Shall we add some error handling here? If an error, then log (the x route couldn't be set and continue ?)
 	}
