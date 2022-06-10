@@ -2,13 +2,12 @@ package docgen
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/swaggest/openapi-go/openapi3"
 )
 
-func GenerateDoc(r *Router, name string) error {
+func GenerateDoc(r *Router, name string) ([]byte, error) {
 	// Read the Router.routes ang get  "name", "method", "query", "path", "body".
 	reflector := openapi3.Reflector{}
 	reflector.Spec = &openapi3.Spec{Openapi: "3.1.0"}
@@ -48,9 +47,8 @@ func GenerateDoc(r *Router, name string) error {
 	if err == nil {
 		fmt.Print("NO ERROR")
 	}
-	ioutil.WriteFile("generated/openapi"+name+".yaml", schema, 0644) // écrire la doc résultat dans un file
 
-	return nil
+	return schema, nil
 }
 
 // o(nParams)
