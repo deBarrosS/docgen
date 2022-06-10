@@ -2,6 +2,7 @@ package docgen
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/swaggest/openapi-go/openapi3"
@@ -43,6 +44,52 @@ func GenerateDoc(r *Router, name string) ([]byte, error) {
 	}
 
 	schema, err := reflector.Spec.MarshalYAML()
+
+	if err == nil {
+		fmt.Print("NO ERROR")
+	}
+
+	return schema, nil
+}
+
+func GenerateDocWrite(r *Router, name string) ([]byte, error) {
+	// Read the Router.routes ang get  "name", "method", "query", "path", "body".
+	reflector := openapi3.Reflector{}
+	reflector.Spec = &openapi3.Spec{Openapi: "3.1.0"}
+
+	s := reflector.SpecEns() //  Création de la Spec (Object contenant les informations du service)
+
+	// o(nRoutes*(nParams+nResps))
+	for _, op := range r.Routes {
+		if &op != nil {
+			oasOp := openapi3.Operation{}
+
+			if &op.Path != nil && strings.Contains(op.Path, "{") { //o(len(op.Path))
+				op.setParameters(&oasOp)
+			}
+
+			reflector.SetRequest(&oasOp, op.Input, strings.ToUpper(op.Method))
+
+			if op.Resps != nil {
+				for code, body := range op.Resps {
+					reflector.SetJSONResponse(&oasOp, body, code)
+				}
+			}
+
+			if op.Internal {
+				oasOp.MapOfAnything = map[string]interface{}{
+					"x-internal": true,
+				}
+			}
+			oasOp.Deprecated = &op.Deprecated
+
+			s.AddOperation(op.Method, op.Path, oasOp)
+		}
+	}
+
+	schema, err := reflector.Spec.MarshalYAML()
+
+	ioutil.WriteFile("openapi.yaml", schema, 0644)
 
 	if err == nil {
 		fmt.Print("NO ERROR")
