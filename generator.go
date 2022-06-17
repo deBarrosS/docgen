@@ -61,6 +61,7 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 
 	s := reflector.SpecEns() //  Création de la Spec (Object contenant les informations du service)
 	internalTag := "[internal]"
+
 	// o(nRoutes*(nParams+nResps))
 	for _, op := range r.Routes {
 		if &op != nil {
@@ -103,6 +104,7 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 		}
 	}
 
+	//o(comp * props)
 	for _, comp := range s.Components.Schemas.MapOfSchemaOrRefValues {
 		setInternal(&comp, s)
 	}
@@ -119,9 +121,11 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 }
 
 // Need oasSpec to find the components referenced by others
+// o(props)
 func setInternal(s *openapi3.SchemaOrRef, oasSpec *openapi3.Spec) {
 	tagInternal := "[internal]"
 
+	// o(1)
 	if s.SchemaReference != nil {
 		ref := s.SchemaReference.Ref
 		if &ref != nil {
@@ -132,9 +136,11 @@ func setInternal(s *openapi3.SchemaOrRef, oasSpec *openapi3.Spec) {
 			}
 		}
 	}
+	// o(props)
 	if s.Schema != nil {
 		s.Schema.WithMapOfAnythingItem("x-internal", true)
 		s.Schema.WithDescription(tagInternal)
+
 		for _, prop := range s.Schema.Properties {
 			if prop.Schema != nil {
 				prop.Schema.WithMapOfAnythingItem("x-internal", true)
