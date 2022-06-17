@@ -58,7 +58,7 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 	reflector.Spec = &openapi3.Spec{Openapi: "3.1.0"}
 
 	s := reflector.SpecEns() //  Création de la Spec (Object contenant les informations du service)
-
+	internalTag := "[internal]"
 	// o(nRoutes*(nParams+nResps))
 	for _, op := range r.Routes {
 		if &op != nil {
@@ -70,18 +70,33 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 
 			reflector.SetRequest(&oasOp, op.Input, strings.ToUpper(op.Method))
 
+			if oasOp.RequestBody != nil {
+				if oasOp.RequestBody.RequestBody.Content["application/json"].Schema.Schema != nil {
+					oasOp.RequestBody.RequestBody.Content["application/json"].Schema.Schema.WithMapOfAnythingItem("x-internal", true)
+				}
+				if oasOp.RequestBody.RequestBody.Content["application/json"].Schema.SchemaReference != nil {
+					ref := oasOp.RequestBody.RequestBody.Content["application/json"].Schema.SchemaReference.Ref
+					ref = strings.TrimPrefix(ref, "#/components/schemas/")
+					sch := s.Components.Schemas.MapOfSchemaOrRefValues[ref].Schema
+					sch.WithMapOfAnythingItem("x-internal", true)
+					print("debug")
+				}
+
+				//oasOp.RequestBody.RequestBody.MapOfAnything["x-internal"] = true
+			}
+
 			if op.Resps != nil {
 				for code, body := range op.Resps {
 					reflector.SetJSONResponse(&oasOp, body, code)
 				}
 			}
 
-			if op.Internal {
-				oasOp.MapOfAnything = map[string]interface{}{
-					"x-internal": true,
-				}
+			oasOp.MapOfAnything = map[string]interface{}{
+				"x-internal": true,
 			}
+
 			oasOp.Deprecated = &op.Deprecated
+			oasOp.Description = &internalTag
 
 			s.AddOperation(op.Method, op.Path, oasOp)
 		}
