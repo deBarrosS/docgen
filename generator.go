@@ -42,7 +42,9 @@ func GenerateDoc(r *Router, name string) ([]byte, error) {
 			s.AddOperation(op.Method, op.Path, oasOp)
 		}
 	}
-
+	for _, comp := range s.Components.Schemas.MapOfSchemaOrRefValues {
+		setInternal(&comp, s)
+	}
 	schema, err := reflector.Spec.MarshalYAML()
 
 	if err == nil {
@@ -90,7 +92,6 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 					reflector.SetJSONResponse(&oasOp, body, code)
 				}
 			}
-
 			oasOp.MapOfAnything = map[string]interface{}{
 				"x-internal": true,
 			}
@@ -101,7 +102,9 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 			s.AddOperation(op.Method, op.Path, oasOp)
 		}
 	}
-
+	for _, comp := range s.Components.Schemas.MapOfSchemaOrRefValues {
+		setInternal(&comp, s)
+	}
 	schema, err := reflector.Spec.MarshalYAML()
 
 	ioutil.WriteFile("openapi.yaml", schema, 0644)
@@ -111,6 +114,27 @@ func GenerateDocWrite(r *Router, name string) ([]byte, error) {
 	}
 
 	return schema, nil
+}
+
+func setInternal(s *openapi3.SchemaOrRef, oasSpec *openapi3.Spec) {
+	tagInternal := "[internal]"
+
+	if s.SchemaReference != nil {
+		ref := s.SchemaReference.Ref
+		refTrim := strings.TrimPrefix(ref, "#/components/schemas/")
+		sch := oasSpec.Components.Schemas.MapOfSchemaOrRefValues[refTrim]
+		setInternal(&sch, oasSpec)
+	}
+	if s.Schema != nil {
+		s.Schema.WithMapOfAnythingItem("x-internal", true)
+		s.Schema.WithDescription(tagInternal)
+		for _, prop := range s.Schema.Properties {
+			if prop.Schema != nil {
+				prop.Schema.WithMapOfAnythingItem("x-internal", true)
+				prop.Schema.WithDescription(tagInternal)
+			}
+		}
+	}
 }
 
 // o(nParams)
