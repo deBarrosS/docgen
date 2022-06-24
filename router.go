@@ -17,7 +17,7 @@ type Info struct {
 }
 
 type Router struct {
-	Routes       []Route
+	Routes       []*Route
 	BaseUrl      string
 	DefaultResps map[int]interface{}
 }
@@ -32,9 +32,15 @@ type Route struct {
 	Deprecated bool
 }
 
+type Handler struct {
+	Function http.HandlerFunc
+	Input    interface{}         // No need to map by method because of the line above ^^
+	Resps    map[int]interface{} // outputs per return code
+}
+
 func InitApi(name, version string) *Router {
 	r := new(Router)
-	r.Routes = make([]Route, 30)
+	r.Routes = make([]*Route, 2)
 
 	return r
 }
@@ -45,10 +51,11 @@ func NewRouter() *Router {
 }
 
 func (r *Router) NewRoute(path, meth string) *Router {
-	r.Routes = append(r.Routes, Route{
-		Path:   path,
-		Method: meth,
-	})
+	route := new(Route)
+	route.Path = path
+	route.Method = meth
+
+	r.Routes = append(r.Routes, route)
 
 	return r
 }
@@ -63,8 +70,8 @@ func RegisterRoutes(r *Router) (*mux.Router, error) {
 	router := new(mux.Router)
 
 	for _, route := range r.Routes {
-		if &route != nil && &route.Path != nil && &route.Method != nil {
-			if &route.Handler != nil {
+		if route != nil && &(route.Path) != nil && &(route.Method) != nil {
+			if &(route.Handler) != nil {
 				router.NewRoute().Path(route.Path).Methods(route.Method).Handler(route.Handler) //Add handler
 			}
 		}
