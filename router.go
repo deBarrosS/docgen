@@ -50,13 +50,34 @@ func NewRouter() *Router {
 	return r
 }
 
-func (r *Router) NewRoute(path, meth string) *Router {
+func (r *Router) NewRoute() *Route {
 	route := new(Route)
-	route.Path = path
-	route.Method = meth
-
 	r.Routes = append(r.Routes, route)
+	return route
+}
 
+func (r *Route) WithPath(path string) *Route { // Naming problems for Path as method and Prop
+	r.Path = path
+	return r
+}
+
+func (r *Route) WithHandler(handler http.HandlerFunc) *Route { // Naming problems for Path as method and Prop
+	r.Handler = handler
+	return r
+}
+
+func (r *Route) WithMethod(method string) *Route { // Naming problems for Path as method and Prop
+	r.Method = method
+	return r
+}
+
+func (r *Route) WithInput(input interface{}) *Route { // Naming problems for Path as method and Prop
+	r.Input = input
+	return r
+}
+
+func (r *Route) WithOutput(responses map[int]interface{}) *Route { // Naming problems for Path as method and Prop
+	r.Resps = responses
 	return r
 }
 
